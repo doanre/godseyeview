@@ -35,24 +35,43 @@
     </div>
     <div id="cesiumContainer"></div>
     <script>
+        // Use a free ArcGIS basemap so the Earth renders without a Cesium Ion token
+        const imageryProvider = new Cesium.ArcGisMapServerImageryProvider({
+            url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
+        });
+
         const viewer = new Cesium.Viewer('cesiumContainer', {
+            imageryProvider: imageryProvider,
             baseLayerPicker: false,
             geocoder: false,
             homeButton: false,
             sceneModePicker: true,
             navigationHelpButton: false,
-            shouldAnimate: true
+            shouldAnimate: true,
+            // Suppress the Ion token warning banner
+            creditContainer: document.createElement('div')
         });
 
-        // Set to a Dark Matter/Midnight map style if you have an API key, 
-        // otherwise default imagery works fine.
+        // Position the camera to see the full globe on load
+        viewer.camera.setView({
+            destination: Cesium.Cartesian3.fromDegrees(0.0, 20.0, 25000000.0)
+        });
+
         const ds = new Cesium.CzmlDataSource();
         viewer.dataSources.add(ds);
 
-        const socket = new WebSocket(`ws://${window.location.host}/ws`);
+        // Use wss:// when the page is served over HTTPS, ws:// otherwise
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+        const socket = new WebSocket(`${wsProtocol}://${window.location.host}/ws`);
         socket.onmessage = (event) => {
             ds.process(JSON.parse(event.data));
             document.getElementById('status').innerText = "SYNCHRONIZED";
+        };
+        socket.onerror = () => {
+            document.getElementById('status').innerText = "CONNECTION ERROR";
+        };
+        socket.onclose = () => {
+            document.getElementById('status').innerText = "DISCONNECTED";
         };
     </script>
 </body>
