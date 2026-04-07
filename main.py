@@ -1,6 +1,7 @@
 import os, asyncio, requests, json
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from skyfield.api import load, EarthSatellite
 
 app = FastAPI()
@@ -45,6 +46,11 @@ def get_flights():
     except: return []
 
 @app.get("/")
+async def index():
+    return FileResponse("index.html")
+
+
+@app.get("/czml")
 async def get_czml():
     full_czml = [{"id": "document", "version": "1.0"}]
     full_czml.extend(get_satellites())
