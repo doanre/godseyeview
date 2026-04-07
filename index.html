@@ -1,35 +1,58 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>WorldView Command Center</title>
+    <title>WORLDVIEW // GLOBAL OBSERVER</title>
     <script src="https://cesium.com/downloads/cesiumjs/releases/1.105/Build/Cesium/Cesium.js"></script>
     <link href="https://cesium.com/downloads/cesiumjs/releases/1.105/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
     <style>
-        body { margin: 0; background: #000; color: #0f0; font-family: monospace; }
-        #cesiumContainer { width: 100%; height: 100vh; }
-        #overlay { position: absolute; top: 20px; left: 20px; background: rgba(0,20,0,0.85); 
-                   padding: 15px; border: 1px solid #0f0; z-index: 10; }
+        body, html { margin: 0; padding: 0; height: 100%; background: #000; overflow: hidden; }
+        #cesiumContainer { width: 100%; height: 100%; }
+        #hud {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; border: 20px solid rgba(0, 255, 0, 0.05); box-sizing: border-box;
+            z-index: 10; font-family: 'Courier New', monospace;
+        }
+        .panel {
+            position: absolute; background: rgba(0, 10, 0, 0.85);
+            border: 1px solid #0f0; color: #0f0; padding: 15px; pointer-events: auto;
+        }
+        #top-left { top: 30px; left: 30px; width: 250px; }
+        .glitch { animation: glitch 2s infinite; }
+        @keyframes glitch { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
-    <div id="overlay">
-        <h2 style="margin:0">WORLDVIEW OSINT</h2>
-        <div id="status">INITIALIZING SIGNAL...</div>
+    <div id="hud">
+        <div id="top-left" class="panel">
+            <div style="font-size: 1.2em; border-bottom: 1px solid #0f0; margin-bottom: 5px;">SYSTEM STATUS</div>
+            <div class="glitch">LINK: <span id="status">ESTABLISHING...</span></div>
+            <div style="margin-top: 10px; font-size: 0.8em;">
+                <span style="color: cyan;">●</span> SATELLITES ACTIVE<br>
+                <span style="color: lime;">●</span> AIRCRAFT BROADCASTS<br>
+                <span style="color: yellow;">●</span> MARITIME SIGNALS (MOCKED)
+            </div>
+        </div>
     </div>
     <div id="cesiumContainer"></div>
     <script>
-        const viewer = new Cesium.Viewer('cesiumContainer', { shouldAnimate: true });
+        const viewer = new Cesium.Viewer('cesiumContainer', {
+            baseLayerPicker: false,
+            geocoder: false,
+            homeButton: false,
+            sceneModePicker: true,
+            navigationHelpButton: false,
+            shouldAnimate: true
+        });
+
+        // Set to a Dark Matter/Midnight map style if you have an API key, 
+        // otherwise default imagery works fine.
         const ds = new Cesium.CzmlDataSource();
         viewer.dataSources.add(ds);
 
-        // Auto-detect backend URL (Local vs Railway)
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.host}/ws`;
-        
-        const socket = new WebSocket(wsUrl);
-        socket.onmessage = (e) => {
-            ds.process(json.parse(e.data));
-            document.getElementById('status').innerText = "LIVE FEED ACTIVE";
+        const socket = new WebSocket(`ws://${window.location.host}/ws`);
+        socket.onmessage = (event) => {
+            ds.process(JSON.parse(event.data));
+            document.getElementById('status').innerText = "SYNCHRONIZED";
         };
     </script>
 </body>
