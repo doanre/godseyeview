@@ -44,6 +44,13 @@ def get_flights():
         } for s in states]
     except: return []
 
+@app.get("/")
+async def get_czml():
+    full_czml = [{"id": "document", "version": "1.0"}]
+    full_czml.extend(get_satellites())
+    full_czml.extend(get_flights())
+    return full_czml
+
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
